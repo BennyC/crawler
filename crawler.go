@@ -42,7 +42,7 @@ func (d *URLMap) store(url string, res DocumentResult) {
 }
 
 // Crawl will recursively crawl all links found from the baseurl
-func Crawl(o Options, baseurl string) *URLMap {
+func Crawl(o Options, ch chan DocumentResult, baseurl string) *URLMap {
 	dm := &URLMap{
 		URLs: map[string]DocumentResult{},
 
@@ -51,23 +51,27 @@ func Crawl(o Options, baseurl string) *URLMap {
 	}
 
 	dm._wg.Add(1)
-	go crawl(o, dm, baseurl)
+	go crawl(o, ch, dm, baseurl)
 	dm._wg.Wait()
+
+	close(ch)
 
 	return dm
 }
 
 // Recursion function for the exported Crawl
-func crawl(o Options, dm *URLMap, url string) {
+func crawl(o Options, ch chan DocumentResult, dm *URLMap, url string) {
 	defer dm._wg.Done()
 
 	res, _ := o.LinkFinder.LinksTo(url)
 	dm.store(url, res)
 
+	ch <- res
+
 	for _, u := range res.FoundLinks {
 		if !dm.isVisited(u.RawURL) {
 			dm._wg.Add(1)
-			go crawl(o, dm, u.RawURL)
+			go crawl(o, ch, dm, u.RawURL)
 		}
 	}
 }

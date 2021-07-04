@@ -3,7 +3,6 @@ package main
 import (
 	"flag"
 	"log"
-	"os"
 
 	"github.com/bennyc/crawler"
 )
@@ -27,9 +26,10 @@ func main() {
 		log.Fatalf("invalid printer type: %s", p)
 	}
 
-	res := crawler.Crawl(crawler.Options{
+	ch := make(chan crawler.DocumentResult)
+	go crawler.Crawl(crawler.Options{
 		LinkFinder: crawler.SameDomainLinkFinder{},
-	}, url)
+	}, ch, url)
 
-	p.Print(os.Stdout, res)
+	p.Print(ch)
 }

@@ -22,6 +22,8 @@ type Link struct {
 }
 
 type DocumentResult struct {
+	URL string
+
 	// Did the document have issues with parsing or fetching
 	HasError bool
 
@@ -40,14 +42,14 @@ func (finder SameDomainLinkFinder) LinksTo(rawurl string) (DocumentResult, error
 	// validate and build a url
 	base, err := url.ParseRequestURI(rawurl)
 	if err != nil {
-		return DocumentResult{HasError: true}, ErrURLParse
+		return DocumentResult{HasError: true, URL: base.String()}, ErrURLParse
 	}
 
 	// fetch the document and build a HTML node from it
 	// allowing us to xpath the results to find all links within the document
 	doc, err := finder.fetchNode(base)
 	if err != nil {
-		return DocumentResult{HasError: true}, err
+		return DocumentResult{HasError: true, URL: base.String()}, err
 	}
 
 	var links []Link
@@ -72,6 +74,7 @@ func (finder SameDomainLinkFinder) LinksTo(rawurl string) (DocumentResult, error
 	}
 
 	return DocumentResult{
+		URL:        base.String(),
 		HasError:   false,
 		FoundLinks: links,
 	}, nil
